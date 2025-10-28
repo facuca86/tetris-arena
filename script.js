@@ -23,86 +23,82 @@
   let fondoIndex = -1;
 
   // === AUDIO ===
-  const player = document.createElement('audio');
-  player.loop = false;
-  player.volume = 0.6;
-  document.body.appendChild(player);
+// === AUDIO ===
+const player = document.createElement('audio');
+player.loop = false;
+player.volume = 0.6;
+document.body.appendChild(player);
 
-  function updateHUD() {
-    const t = pistaIndex + 1;
-    const f = fondoIndex === -1 ? '--' : fondoIndex + 1;
-    hud.textContent = `🎵 Track ${t} | Fondo ${f}`;
-  }
+function updateHUD() {
+  const t = pistaIndex + 1;
+  const f = fondoIndex === -1 ? '--' : fondoIndex + 1;
+  hud.textContent = `🎵 Track ${t} | Fondo ${f}`;
+}
 
-  // === CONTROL DE FONDOS ===
-  function setRandomBackgroundDifferent() {
-    const start = Math.floor(Math.random() * fondos.length);
-    let found = false;
-    for (let i = 0; i < fondos.length; i++) {
-      const idx = (start + i) % fondos.length;
-      if (idx === fondoIndex) continue;
-      const img = new Image();
-      img.onload = () => {
-        document.documentElement.style.setProperty('--fondo', `url('${fondos[idx]}')`);
-        fondoIndex = idx;
-        updateHUD();
-      };
-      img.onerror = () => {};
-      img.src = fondos[idx];
-      found = true;
-      break;
-    }
-    if (!found) {
-      document.documentElement.style.setProperty('--fondo', `linear-gradient(135deg,#10202b,#203a5a)`);
-      fondoIndex = -1;
+// === CONTROL DE FONDOS ===
+function setRandomBackgroundDifferent() {
+  const start = Math.floor(Math.random() * fondos.length);
+  for (let i = 0; i < fondos.length; i++) {
+    const idx = (start + i) % fondos.length;
+    if (idx === fondoIndex) continue;
+    const img = new Image();
+    img.onload = () => {
+      document.documentElement.style.setProperty('--fondo', `url('${fondos[idx]}')`);
+      fondoIndex = idx;
       updateHUD();
-    }
+    };
+    img.onerror = () => {};
+    img.src = fondos[idx];
+    return;
   }
+  // fallback si nada carga
+  document.documentElement.style.setProperty('--fondo', `linear-gradient(135deg,#10202b,#203a5a)`);
+  fondoIndex = -1;
+  updateHUD();
+}
 
-  // === CONTROL DE MÚSICA ===
-  function playTrack(index) {
-    pistaIndex = index % pistas.length;
-    player.src = pistas[pistaIndex];
-    player.play().catch(() => {
-      console.warn('Fallo al reproducir pista, intentando siguiente...');
-      pistaIndex = (pistaIndex + 1) % pistas.length;
-      playTrack(pistaIndex);
-    });
+// === CONTROL DE MÚSICA ===
+function playTrack(index, attempt = 0) {
+  pistaIndex = index % pistas.length;
+  player.src = pistas[pistaIndex];
+  player.play().then(() => {
     updateHUD();
-  }
-
-  (function initMediaOnLoad() {
-    setRandomBackgroundDifferent();
-    let tries = 0;
-    function ensureMusic() {
-      playTrack(0);
-      const interval = setInterval(() => {
-        if (!player.paused && player.currentTime > 0) {
-          clearInterval(interval);
-        } else if (tries++ > pistas.length * 2) {
-          clearInterval(interval);
-          console.warn('No se pudo reproducir ninguna pista.');
-        } else {
-          pistaIndex = (pistaIndex + 1) % pistas.length;
-          playTrack(pistaIndex);
-        }
-      }, 2000);
+  }).catch(() => {
+    console.warn(`[Audio] Error al reproducir pista ${pistaIndex + 1}.`);
+    if (attempt < 2) {
+      // intenta siguiente pista tras breve pausa
+      setTimeout(() => playTrack((pistaIndex + 1) % pistas.length, attempt + 1), 800);
+    } else {
+      console.warn('[Audio] No se pudo reproducir ninguna pista, quedará en silencio hasta Start.');
     }
-    ensureMusic();
-  })();
-
-  player.addEventListener('ended', () => {
-    pistaIndex = (pistaIndex + 1) % pistas.length;
-    playTrack(pistaIndex);
-    setRandomBackgroundDifferent();
-    console.log('[Music] Reproduciendo:', pistas[pistaIndex]);
   });
+}
 
-  function nextTrack() {
-    pistaIndex = (pistaIndex + 1) % pistas.length;
-    playTrack(pistaIndex);
-    setRandomBackgroundDifferent();
-  }
+// === INICIO AUTOMÁTICO ===
+(function initMediaOnLoad() {
+  setRandomBackgroundDifferent();
+
+  // intenta reproducir la primera pista, sin bloquear la carga de la página
+  setTimeout(() => {
+    playTrack(0);
+  }, 500);
+})();
+
+// === AL TERMINAR UNA CANCIÓN ===
+player.addEventListener('ended', () => {
+  pistaIndex = (pistaIndex + 1) % pistas.length;
+  playTrack(pistaIndex);
+  setRandomBackgroundDifferent();
+  console.log('[Music] Reproduciendo:', pistas[pistaIndex]);
+});
+
+// === SIGUIENTE PISTA MANUAL ===
+function nextTrack() {
+  pistaIndex = (pistaIndex + 1) % pistas.length;
+  playTrack(pistaIndex);
+  setRandomBackgroundDifferent();
+}
+
 
   // === LÓGICA DEL JUEGO ===
   const COLORS = { I: '#00fff0', J: '#00a8ff', L: '#ff6a00', O: '#fffb37', S: '#00ff6a', T: '#d500f9', Z: '#ff1744' };
