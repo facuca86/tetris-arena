@@ -29,7 +29,7 @@
   document.body.appendChild(player);
 
   // SFX Game Over (independiente de la música)
-  const sfxGameOver = new Audio('assets/sfx/gameover.wav');
+  const sfxGameOver = new Audio('assets/sfx/gameover.mp3');
   sfxGameOver.volume = 0.7;
 
   function updateHUD() {
