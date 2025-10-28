@@ -1,0 +1,46 @@
+<!-- ========== FILE: index.html ========== -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tetris Arena</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="hud">🎵 Track 1 | Fondo 1</div>
+<div class="game">
+<div class="side">
+<div class="title">TETRIS ARENA<br><small>SUNSET 8BIT</small></div>
+<div class="next-box"><canvas id="next" width="100" height="100"></canvas></div>
+<div class="stats">
+<div>SCORE</div><div id="score">0</div>
+<div>LINES</div><div id="lines">0</div>
+<div>LEVEL</div><div id="level">1</div>
+<div>SPEED</div><div id="speed">-</div>
+<div>TIME</div><div id="time">00:00</div>
+</div>
+<div class="controls">
+<button id="start">▶ START</button>
+<button id="pause">⏸ PAUSE</button>
+<button id="reset">🔁 RESET</button>
+</div>
+<div class="controls">
+<button id="nextTrack">🎵 NEXT TRACK</button>
+</div>
+</div>
+<canvas id="board" width="380" height="760"></canvas>
+</div>
+<script src="script.js"></script>
+<script>
+  document.body.addEventListener('click', () => {
+    const audio = document.querySelector('audio');
+    if (audio && audio.paused) {
+      audio.play().catch(() => {});
+    }
+  }, { once: true });
+</script>
+
+</body>
+</html>
