@@ -19,8 +19,8 @@
   const pistas = Array.from({ length: MAX_PISTAS }, (_, i) => `assets/music/${i + 1}.mp3`);
   const fondos = Array.from({ length: MAX_FONDOS }, (_, i) => `assets/img/${i + 1}.jpeg`);
 
-  let pistaIndex = 0;      // SIEMPRE arranca en 1.mp3
-  let fondoIndex = -1;     // se elige al cargar
+  let pistaIndex = 0;      
+  let fondoIndex = -1;     
 
   // === AUDIO ===
   const player = document.createElement('audio');
@@ -28,7 +28,6 @@
   player.volume = 0.6;
   document.body.appendChild(player);
 
-  // SFX Game Over (independiente de la música)
   const sfxGameOver = new Audio('assets/sfx/gameover.mp3');
   sfxGameOver.volume = 0.7;
 
@@ -38,7 +37,6 @@
     hud.textContent = `🎵 Track ${t} | Fondo ${f}`;
   }
 
-  // === CONTROL DE FONDOS (si falla, aplica fallback) ===
   function setRandomBackgroundDifferent() {
     const start = Math.floor(Math.random() * fondos.length);
     for (let i = 0; i < fondos.length; i++) {
@@ -54,53 +52,36 @@
       img.src = fondos[idx];
       return;
     }
-    // Fallback si nada carga
     document.documentElement.style.setProperty('--fondo', `linear-gradient(135deg,#10202b,#203a5a)`);
     fondoIndex = -1;
     updateHUD();
   }
 
-  // === CONTROL DE MÚSICA (sin bucles infinitos) ===
   function playTrack(index, attempt = 0) {
     pistaIndex = index % pistas.length;
     player.src = pistas[pistaIndex];
-
-    player.play()
-      .then(() => {
-        updateHUD();
-        console.log(`[Audio] ✅ Reproduciendo pista ${pistaIndex + 1}`);
-      })
-      .catch((err) => {
-        console.warn(`[Audio] ❌ Falló la reproducción (intento ${attempt + 1}):`, err && err.name);
-        // Si es autoplay bloqueado, esperamos interacción (no reintentamos infinito)
-        if (err && (err.name === 'NotAllowedError' || err.name === 'AbortError')) {
-          console.warn('[Audio] Autoplay bloqueado. Se habilitará con interacción del usuario.');
-          return;
-        }
-        // Otros errores: probar hasta 3 intentos en total
-        if (attempt < 2) {
-          setTimeout(() => playTrack((pistaIndex + 1) % pistas.length, attempt + 1), 800);
-        }
-      });
+    player.play().then(() => {
+      updateHUD();
+      console.log(`[Audio] ✅ Reproduciendo pista ${pistaIndex + 1}`);
+    }).catch((err) => {
+      console.warn(`[Audio] ❌ Falló la reproducción:`, err?.name);
+      if (attempt < 2) setTimeout(() => playTrack((pistaIndex + 1) % pistas.length, attempt + 1), 800);
+    });
   }
 
-  // === INIT MEDIA (fondo + pista 1) ===
   (function initMediaOnLoad() {
     setRandomBackgroundDifferent();
-    pistaIndex = 0; // fuerza comenzar por 1.mp3
-    setTimeout(() => { playTrack(pistaIndex); }, 500); // no bloquea la carga
+    pistaIndex = 0;
+    setTimeout(() => { playTrack(pistaIndex); }, 500);
     updateHUD();
   })();
 
-  // Al terminar una canción: siguiente + fondo nuevo
   player.addEventListener('ended', () => {
     pistaIndex = (pistaIndex + 1) % pistas.length;
     playTrack(pistaIndex);
     setRandomBackgroundDifferent();
-    console.log('[Music] Reproduciendo:', pistas[pistaIndex]);
   });
 
-  // Botón NEXT TRACK
   function nextTrack() {
     pistaIndex = (pistaIndex + 1) % pistas.length;
     playTrack(pistaIndex);
@@ -108,14 +89,11 @@
     updateHUD();
   }
 
-  // Desbloqueo de audio con START
   document.getElementById('start').addEventListener('click', () => {
-    if (player.paused) {
-      player.play().catch(() => {});
-    }
+    if (player.paused) player.play().catch(() => {});
   });
 
-  // === LÓGICA DEL JUEGO (igual que tenías) ===
+  // === LÓGICA DEL JUEGO ===
   const COLORS = { I:'#00fff0', J:'#00a8ff', L:'#ff6a00', O:'#fffb37', S:'#00ff6a', T:'#d500f9', Z:'#ff1744' };
   const SHAPES = {
     I:[[1,1,1,1]], J:[[1,0,0],[1,1,1]], L:[[0,0,1],[1,1,1]],
@@ -124,6 +102,8 @@
   const KEYS = { LEFT:37, UP:38, RIGHT:39, DOWN:40, SPACE:32, P:80 };
 
   let grid, current, next, score, lines, level, dropInterval, lastTime=0, acc=0, running=false, paused=false, startMs=0;
+  let flashingRows = null; // filas que están destellando
+  let flashTimer = 0;
 
   function rotate(m){const h=m.length,w=m[0].length;return Array.from({length:w},(_,x)=>Array.from({length:h},(_,y)=>m[h-1-y][x]));}
   function collide(g,p){for(let y=0;y<p.shape.length;y++)for(let x=0;x<p.shape[0].length;x++)if(p.shape[y][x]){const ny=p.y+y,nx=p.x+x;if(ny<0)continue;if(nx<0||nx>=COLS||ny>=ROWS||g[ny][nx])return true;}return false;}
@@ -132,7 +112,6 @@
   function updateSpeed(){dropInterval=Math.max(700-(level-1)*70,80);speedEl.textContent=dropInterval;}
   function formatTime(sec){const m=Math.floor(sec/60),s=Math.floor(sec%60);return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;}
 
-  // Estética 8-bit
   function hexToRgb(hex){hex=hex.replace('#','');if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');const num=parseInt(hex,16);return {r:(num>>16)&255,g:(num>>8)&255,b:num&255};}
   function rgbToHex(r,g,b){const h=(n)=>n.toString(16).padStart(2,'0');return `#${h(r)}${h(g)}${h(b)}`;}
   function shade(hex,p){const {r,g,b}=hexToRgb(hex);const mix=(c)=>Math.min(255,Math.max(0,Math.round(c+(p*255))));return rgbToHex(mix(r-255*(p<0)),mix(g-255*(p<0)),mix(b-255*(p<0)));}
@@ -142,15 +121,65 @@
     context.fillStyle='#000'; context.fillRect(px,py,size,2); context.fillRect(px,py,2,size); context.fillRect(px,py+size-2,size,2); context.fillRect(px+size-2,py,2,size);
     context.fillStyle=light; context.fillRect(px+2,py+2,size-4,3); context.fillRect(px+2,py+2,3,size-4);
     context.fillStyle=dark; context.fillRect(px+2,py+size-5,size-4,3); context.fillRect(px+size-5,py+2,3,size-4);
-    const step=Math.max(3,Math.floor(size/6)); for(let y=4;y<size-4;y+=step){ for(let x=4;x<size-4;x+=step){ context.fillStyle = ((x+y)/step)%2?dark:darker; context.fillRect(px+x,py+y,step-1,step-1); }}
+    const step=Math.max(3,Math.floor(size/6)); 
+    for(let y=4;y<size-4;y+=step){ 
+      for(let x=4;x<size-4;x+=step){ 
+        context.fillStyle = ((x+y)/step)%2?dark:darker; 
+        context.fillRect(px+x,py+y,step-1,step-1); 
+      } 
+    }
     context.fillStyle=light; context.fillRect(px+4,py+4,Math.max(2,Math.floor(size/6)),Math.max(2,Math.floor(size/6)));
   }
   function drawCell(gx,gy,t){ const x=gx*CELL,y=gy*CELL; draw8bitCell(ctx,x,y,CELL, COLORS[t]||'#9cf'); }
   function drawGridBg(){ctx.save();ctx.strokeStyle='rgba(255,255,255,.06)';ctx.lineWidth=1;for(let x=1;x<COLS;x++){ctx.beginPath();ctx.moveTo(x*CELL+0.5,0);ctx.lineTo(x*CELL+0.5,ROWS*CELL);ctx.stroke();}for(let y=1;y<ROWS;y++){ctx.beginPath();ctx.moveTo(0,y*CELL+0.5);ctx.lineTo(COLS*CELL,y*CELL+0.5);ctx.stroke();}ctx.restore();}
   function drawNext(){ nctx.clearRect(0,0,nextCanvas.width,nextCanvas.height); const c=14; for(let y=0;y<next.shape.length;y++){ for(let x=0;x<next.shape[0].length;x++){ if(next.shape[y][x]) draw8bitCell(nctx, 30+x*c, 30+y*c, c, COLORS[next.type]); } } }
-  function draw(){ ctx.clearRect(0,0,board.width,board.height); drawGridBg(); for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){ const t=grid[y][x]; if(t) drawCell(x,y,t); } for(let y=0;y<current.shape.length;y++) for(let x=0;x<current.shape[0].length;x++) if(current.shape[y][x]){ const gy=current.y+y,gx=current.x+x; if(gy>=0) drawCell(gx,gy,current.type); } drawNext(); }
+  function draw(){ 
+    ctx.clearRect(0,0,board.width,board.height); 
+    drawGridBg(); 
+    for(let y=0;y<ROWS;y++){ 
+      for(let x=0;x<COLS;x++){ 
+        const t=grid[y][x]; 
+        if(t) {
+          if(flashingRows && flashingRows.includes(y)) {
+            // aplica destello visible
+            const blink = Math.sin(Date.now()/40) > 0 ? '#fff' : COLORS[t];
+            draw8bitCell(ctx,x*CELL,y*CELL,CELL,blink);
+          } else {
+            drawCell(x,y,t);
+          }
+        } 
+      } 
+    } 
+    for(let y=0;y<current.shape.length;y++) 
+      for(let x=0;x<current.shape[0].length;x++) 
+        if(current.shape[y][x]){ 
+          const gy=current.y+y,gx=current.x+x; 
+          if(gy>=0) drawCell(gx,gy,current.type); 
+        } 
+    drawNext(); 
+  }
 
-  function clearLines(){let c=0;outer:for(let y=ROWS-1;y>=0;y--){for(let x=0;x<COLS;x++)if(!grid[y][x])continue outer;grid.splice(y,1);grid.unshift(Array(COLS).fill(null));c++;y++;}if(c>0){score+=[0,40,100,300,1200][c]*level;lines+=c;const nl=1+Math.floor(lines/10);if(nl!==level){level=nl;updateSpeed();}}}
+  function clearLines(){
+    let full=[];
+    outer:for(let y=ROWS-1;y>=0;y--){
+      for(let x=0;x<COLS;x++) if(!grid[y][x]) continue outer;
+      full.push(y);
+    }
+    if(full.length>0){
+      flashingRows = full;
+      flashTimer = 250; // duración visible del destello
+      setTimeout(()=>{
+        flashingRows.forEach(y=>grid.splice(y,1));
+        for(let i=0;i<full.length;i++) grid.unshift(Array(COLS).fill(null));
+        flashingRows=null;
+        score+=[0,40,100,300,1200][full.length]*level;
+        lines+=full.length;
+        const nl=1+Math.floor(lines/10);
+        if(nl!==level){level=nl;updateSpeed();}
+      },flashTimer);
+    }
+  }
+
   function tick(){
     const m={...current,y:current.y+1};
     if(!collide(grid,m)) current=m;
@@ -161,7 +190,6 @@
       next=spawn();
       if(collide(grid,current)){
         running=false;
-        // 🔊 SFX Game Over (no interfiere con la música)
         try { sfxGameOver.currentTime = 0; sfxGameOver.play().catch(()=>{}); } catch(e) {}
         alert('GAME OVER');
         reset();
