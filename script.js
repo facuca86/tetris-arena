@@ -24,7 +24,13 @@
   bestEl.textContent = bestScore;
 
   // === ARCHIVOS DE MÚSICA Y FONDOS ===
-  const pistas = Array.from({ length: MAX_PISTAS }, (_, i) => `assets/music/${i + 1}.mp3`);
+  const pistas = [
+    'assets/music/1-theremustbeenanangel.mp3',
+    'assets/music/2-karmapolice.mp3',
+    'assets/music/3-letitbe.mp3',
+    'assets/music/4-fanky.mp3',
+    'assets/music/5-enjoythesilence.mp3',
+  ];
   const fondos = Array.from({ length: MAX_FONDOS }, (_, i) => `assets/img/${i + 1}.jpeg`);
 
   let pistaIndex = 0;
@@ -47,10 +53,14 @@
     document.getElementById('mute').textContent = muted ? '🔇 UNMUTE' : '🔊 MUTE';
   };
 
+  function getTrackName(path) {
+    return path.split('/').pop().replace('.mp3', '').replace(/^\d+-/, '');
+  }
+
   function updateHUD() {
-    const t = pistaIndex + 1;
+    const trackName = getTrackName(pistas[pistaIndex]);
     const f = fondoIndex === -1 ? '--' : fondoIndex + 1;
-    hud.textContent = `🎵 Track ${t} | Fondo ${f}`;
+    hud.textContent = `🎵 ${trackName} | Fondo ${f}`;
   }
 
   function setRandomBackgroundDifferent() {
