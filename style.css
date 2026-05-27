@@ -19,15 +19,21 @@ body::after { background-size: contain; image-rendering: pixelated; opacity: 0.9
 #hud {
 position: fixed; right: 10px; top: 10px; z-index: 3;
 background: rgba(0,0,0,0.45); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);
-font-size: 10px; color: #ffed9a; letter-spacing: .04em; pointer-events: none; backdrop-filter: none;
+font-size: 10px; color: #ffed9a; letter-spacing: .04em; pointer-events: none;
 }
 
 
 .game { position: relative; z-index: 1; height: 100%; display: flex; align-items: center; justify-content: flex-start; gap: 40px; padding: 16px 8%; }
 .side { width:180px; display:grid; gap:10px; background:rgba(0,0,0,.45); padding:10px; border:1px solid rgba(230,241,255,.12); border-radius:8px; }
 .title {font-size:10px;text-align:center;color:#ffed9a;letter-spacing:.08em}
-.next-box {display:flex;justify-content:center}
-#next {background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12);border-radius:4px;image-rendering:pixelated}
+
+/* Next + Hold canvases side by side */
+.piece-row { display: flex; gap: 8px; justify-content: center; }
+.piece-box { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.piece-label { font-size: 7px; color: #ffed9a; letter-spacing: .06em; }
+.key-hint { color: rgba(255,237,154,0.5); }
+#next, #hold { background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.12); border-radius:4px; image-rendering:pixelated; }
+
 .stats {display:grid;grid-template-columns:1fr auto;gap:4px 6px;font-size:8px}
 .controls {display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
 button {all:unset;cursor:pointer;background:#fff;color:#000;font-size:9px;padding:6px 10px;border-radius:6px;border:2px solid #000}
@@ -35,6 +41,34 @@ button:hover {background:#ffed9a}
 
 
 #board { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(10,15,20,0.25); border: 2px solid #bfe8ff; border-radius: 4px; image-rendering: pixelated; box-shadow: 0 0 15px rgba(191,232,255,0.25); }
+
+
+/* Game Over Overlay */
+#gameover-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgba(0,0,0,0.78);
+  align-items: center;
+  justify-content: center;
+}
+#gameover-overlay.active { display: flex; }
+#gameover-box {
+  background: rgba(5,15,25,0.97);
+  border: 2px solid #bfe8ff;
+  border-radius: 10px;
+  padding: 32px 40px;
+  text-align: center;
+  display: grid;
+  gap: 18px;
+  min-width: 260px;
+  box-shadow: 0 0 30px rgba(0,150,255,0.25);
+}
+.go-title { font-size: 18px; color: #ff1744; letter-spacing: 0.1em; text-shadow: 0 0 12px rgba(255,23,68,0.5); }
+.go-row { display: flex; justify-content: space-between; gap: 24px; font-size: 10px; }
+.go-row span:last-child { color: #ffed9a; }
+#go-restart { margin-top: 4px; font-size: 11px; padding: 10px 18px; }
 
 
 @media (max-width:900px){ .game{flex-direction:column;justify-content:center;align-items:center;padding:14px;gap:14px} .side{width:min(92vw,340px)} #board{position:static;transform:none;margin:0 auto;} }
