@@ -1,4 +1,3 @@
-<!-- ========== FILE: index.html ========== -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -13,9 +12,19 @@
 <div class="game">
 <div class="side">
 <div class="title">TETRIS ARENA<br><small>SUNSET 8BIT</small></div>
-<div class="next-box"><canvas id="next" width="100" height="100"></canvas></div>
+<div class="piece-row">
+  <div class="piece-box">
+    <div class="piece-label">NEXT</div>
+    <canvas id="next" width="80" height="80"></canvas>
+  </div>
+  <div class="piece-box">
+    <div class="piece-label">HOLD <span class="key-hint">[C]</span></div>
+    <canvas id="hold" width="80" height="80"></canvas>
+  </div>
+</div>
 <div class="stats">
 <div>SCORE</div><div id="score">0</div>
+<div>BEST</div><div id="best">0</div>
 <div>LINES</div><div id="lines">0</div>
 <div>LEVEL</div><div id="level">1</div>
 <div>SPEED</div><div id="speed">-</div>
@@ -28,10 +37,21 @@
 </div>
 <div class="controls">
 <button id="nextTrack">🎵 NEXT TRACK</button>
+<button id="mute">🔊 MUTE</button>
 </div>
 </div>
 <canvas id="board" width="380" height="760"></canvas>
 </div>
+
+<div id="gameover-overlay">
+  <div id="gameover-box">
+    <div class="go-title">GAME OVER</div>
+    <div class="go-row"><span>SCORE</span><span id="go-score">0</span></div>
+    <div class="go-row"><span>BEST</span><span id="go-best">0</span></div>
+    <button id="go-restart">▶ PLAY AGAIN</button>
+  </div>
+</div>
+
 <script src="script.js"></script>
 <script>
   document.body.addEventListener('click', () => {
@@ -41,6 +61,5 @@
     }
   }, { once: true });
 </script>
-
 </body>
 </html>
