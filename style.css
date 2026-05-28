@@ -71,4 +71,87 @@ button:hover {background:#ffed9a}
 #go-restart { margin-top: 4px; font-size: 11px; padding: 10px 18px; }
 
 
-@media (max-width:900px){ .game{flex-direction:column;justify-content:center;align-items:center;padding:14px;gap:14px} .side{width:min(92vw,340px)} #board{position:static;transform:none;margin:0 auto;} }
+/* Mobile touch controls – hidden on desktop */
+#mobile-controls { display: none; }
+
+@media (max-width: 900px) {
+  html, body { height: auto; overflow: auto; }
+
+  .game {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 8px;
+    gap: 8px;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .side { width: min(96vw, 380px); }
+  .title { font-size: 8px; }
+  #next, #hold { width: 56px; height: 56px; }
+  .stats { font-size: 7px; gap: 3px 6px; }
+
+  #board {
+    position: static;
+    transform: none;
+    margin: 0 auto;
+    /* scale canvas display to ~73% – preserves game resolution */
+    width: min(72vw, 280px);
+    height: min(144vw, 560px);
+  }
+
+  /* ── Mobile control buttons ── */
+  #mobile-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(96vw, 380px);
+    padding: 6px 0 24px;
+  }
+
+  .mob-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .mob-btn {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 80px;
+    height: 60px;
+    background: rgba(10, 20, 35, 0.65);
+    border: 2px solid rgba(191, 232, 255, 0.35);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+    backdrop-filter: blur(6px);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.07s, border-color 0.07s, box-shadow 0.07s;
+  }
+
+  .mob-btn:active {
+    background: rgba(191, 232, 255, 0.2);
+    border-color: #bfe8ff;
+    box-shadow: 0 0 12px rgba(191, 232, 255, 0.35);
+  }
+
+  .mob-icon {
+    font-size: 18px;
+    line-height: 1;
+    color: #e8f0ff;
+  }
+
+  .mob-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: rgba(232, 240, 255, 0.7);
+    letter-spacing: 0.04em;
+  }
+}

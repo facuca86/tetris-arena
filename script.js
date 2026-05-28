@@ -352,6 +352,67 @@
     draw();
   });
 
+  // === CONTROLES MÓVILES ===
+  function mobileAction(action) {
+    if (!running || paused) return;
+    switch (action) {
+      case 'left':
+        if (!collide(grid, {...current, x: current.x - 1})) current.x--;
+        break;
+      case 'right':
+        if (!collide(grid, {...current, x: current.x + 1})) current.x++;
+        break;
+      case 'down':
+        tick();
+        return; // tick ya llama a draw
+      case 'rotate': {
+        const r = rotate(current.shape);
+        if      (!collide(grid, {...current, shape: r}))                        current.shape = r;
+        else if (!collide(grid, {...current, shape: r, x: current.x - 1})) { current.shape = r; current.x--; }
+        else if (!collide(grid, {...current, shape: r, x: current.x + 1})) { current.shape = r; current.x++; }
+        break;
+      }
+      case 'drop':
+        hardDrop();
+        return;
+      case 'hold':
+        holdPiece();
+        break;
+    }
+    draw();
+  }
+
+  function bindMobileBtn(id, action) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+
+    // DAS (delayed auto-shift) para movimiento y soft-drop
+    if (['left', 'right', 'down'].includes(action)) {
+      let dasTimer = null, dasInterval = null;
+      const start = () => {
+        mobileAction(action);
+        dasTimer = setTimeout(() => { dasInterval = setInterval(() => mobileAction(action), 80); }, 200);
+      };
+      const stop = () => { clearTimeout(dasTimer); clearInterval(dasInterval); dasTimer = dasInterval = null; };
+      btn.addEventListener('touchstart',  (e) => { e.preventDefault(); start(); }, { passive: false });
+      btn.addEventListener('touchend',    (e) => { e.preventDefault(); stop();  }, { passive: false });
+      btn.addEventListener('touchcancel', ()  => stop(), { passive: false });
+      btn.addEventListener('mousedown',  start);
+      btn.addEventListener('mouseup',    stop);
+      btn.addEventListener('mouseleave', stop);
+    } else {
+      btn.addEventListener('touchstart', (e) => { e.preventDefault(); mobileAction(action); }, { passive: false });
+      btn.addEventListener('click', () => mobileAction(action));
+    }
+  }
+
+  bindMobileBtn('mob-left',   'left');
+  bindMobileBtn('mob-right',  'right');
+  bindMobileBtn('mob-down',   'down');
+  bindMobileBtn('mob-rotate', 'rotate');
+  bindMobileBtn('mob-drop',   'drop');
+  bindMobileBtn('mob-hold',   'hold');
+
   board.width  = COLS * CELL;
   board.height = ROWS * CELL;
   reset();
