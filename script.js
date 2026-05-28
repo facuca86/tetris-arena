@@ -36,6 +36,20 @@
   let pistaIndex = 0;
   let fondoIndex = -1;
 
+  // === SHUFFLE ===
+  let shuffleQueue = [];
+  function buildShuffleQueue() {
+    shuffleQueue = Array.from({ length: pistas.length }, (_, i) => i);
+    for (let i = shuffleQueue.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [shuffleQueue[i], shuffleQueue[j]] = [shuffleQueue[j], shuffleQueue[i]];
+    }
+  }
+  function nextShuffleIndex() {
+    if (shuffleQueue.length === 0) buildShuffleQueue();
+    return shuffleQueue.pop();
+  }
+
   // === AUDIO ===
   const player = document.createElement('audio');
   player.loop = false;
@@ -57,10 +71,14 @@
     return path.split('/').pop().replace('.mp3', '').replace(/^\d+-/, '');
   }
 
+  const mobileTrackEl = document.getElementById('mobile-track');
+
   function updateHUD() {
     const trackName = getTrackName(pistas[pistaIndex]);
     const f = fondoIndex === -1 ? '--' : fondoIndex + 1;
-    hud.textContent = `🎵 ${trackName} | Fondo ${f}`;
+    const text = `🎵 ${trackName} | Fondo ${f}`;
+    hud.textContent = text;
+    if (mobileTrackEl) mobileTrackEl.textContent = text;
   }
 
   function setRandomBackgroundDifferent() {
@@ -96,19 +114,20 @@
 
   (function initMediaOnLoad() {
     setRandomBackgroundDifferent();
-    pistaIndex = 0;
+    buildShuffleQueue();
+    pistaIndex = nextShuffleIndex();
     setTimeout(() => { playTrack(pistaIndex); }, 500);
     updateHUD();
   })();
 
   player.addEventListener('ended', () => {
-    pistaIndex = (pistaIndex + 1) % pistas.length;
+    pistaIndex = nextShuffleIndex();
     playTrack(pistaIndex);
     setRandomBackgroundDifferent();
   });
 
   function nextTrack() {
-    pistaIndex = (pistaIndex + 1) % pistas.length;
+    pistaIndex = nextShuffleIndex();
     playTrack(pistaIndex);
     setRandomBackgroundDifferent();
     updateHUD();
@@ -126,11 +145,19 @@
   };
   const KEYS = { LEFT:37, UP:38, RIGHT:39, DOWN:40, SPACE:32, P:80, C:67 };
 
+  const pauseOverlay = document.getElementById('pause-overlay');
+
   let grid, current, next, held, canHold;
   let score, lines, level, dropInterval, lastTime=0, acc=0, running=false, paused=false, startMs=0;
   let flashingRows = null;
 
   function rotate(m){const h=m.length,w=m[0].length;return Array.from({length:w},(_,x)=>Array.from({length:h},(_,y)=>m[h-1-y][x]));}
+  function tryRotate() {
+    const r = rotate(current.shape);
+    if      (!collide(grid, {...current, shape: r}))                        { current.shape = r; }
+    else if (!collide(grid, {...current, shape: r, x: current.x - 1})) { current.shape = r; current.x--; }
+    else if (!collide(grid, {...current, shape: r, x: current.x + 1})) { current.shape = r; current.x++; }
+  }
   function collide(g,p){for(let y=0;y<p.shape.length;y++)for(let x=0;x<p.shape[0].length;x++)if(p.shape[y][x]){const ny=p.y+y,nx=p.x+x;if(ny<0)continue;if(nx<0||nx>=COLS||ny>=ROWS||g[ny][nx])return true;}return false;}
   function merge(g,p){for(let y=0;y<p.shape.length;y++)for(let x=0;x<p.shape[0].length;x++)if(p.shape[y][x]){const ny=p.y+y,nx=p.x+x;if(ny>=0)g[ny][nx]=p.type;}}
   function spawn(){const types=Object.keys(SHAPES);const t=types[(Math.random()*types.length)|0];return{type:t,shape:SHAPES[t].map(r=>r.slice()),x:(COLS>>1)-1,y:-1};}
@@ -241,6 +268,17 @@
     drawHold();
   }
 
+  function showScorePopup(pts) {
+    const rect = board.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'score-popup';
+    el.textContent = `+${pts}`;
+    el.style.left = `${rect.left + rect.width / 2}px`;
+    el.style.top  = `${rect.top  + rect.height * 0.35}px`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  }
+
   function clearLines() {
     let full = [];
     outer:for(let y=ROWS-1;y>=0;y--){
@@ -250,10 +288,13 @@
     if (full.length > 0) {
       flashingRows = full;
       setTimeout(() => {
-        flashingRows.forEach(y => grid.splice(y, 1));
+        // ordenar descendente para que cada splice no desplace los índices inferiores
+        [...full].sort((a, b) => b - a).forEach(y => grid.splice(y, 1));
         for (let i = 0; i < full.length; i++) grid.unshift(Array(COLS).fill(null));
         flashingRows = null;
-        score += [0,40,100,300,1200][full.length] * level;
+        const pts = [0, 40, 100, 300, 1200][full.length] * level;
+        score += pts;
+        showScorePopup(pts);
         lines += full.length;
         const nl = 1 + Math.floor(lines / 10);
         if (nl !== level) { level = nl; updateSpeed(); }
@@ -261,8 +302,15 @@
     }
   }
 
+  function setPaused(val) {
+    paused = val;
+    if (paused) pauseOverlay.classList.add('active');
+    else pauseOverlay.classList.remove('active');
+  }
+
   function showGameOver() {
     running = false;
+    pauseOverlay.classList.remove('active');
     try { sfxGameOver.currentTime = 0; sfxGameOver.play().catch(() => {}); } catch(e) {}
     if (score > bestScore) {
       bestScore = score;
@@ -309,6 +357,7 @@
 
   function reset() {
     gameoverOverlay.classList.remove('active');
+    pauseOverlay.classList.remove('active');
     grid = Array.from({length: ROWS}, () => Array(COLS).fill(null));
     score = 0; lines = 0; level = 1; updateSpeed();
     current = spawn(); next = spawn();
@@ -322,7 +371,8 @@
   document.getElementById('start').onclick = () => {
     if (!running) { running = true; paused = false; startMs = Date.now(); player.play().catch(() => {}); requestAnimationFrame(loop); }
   };
-  document.getElementById('pause').onclick = () => { if (running) paused = !paused; };
+  document.getElementById('pause').onclick = () => { if (running) setPaused(!paused); };
+  document.getElementById('pause-resume').onclick = () => { if (running) setPaused(false); };
   document.getElementById('reset').onclick = () => { reset(); };
   document.getElementById('nextTrack').onclick = () => { nextTrack(); };
   document.getElementById('go-restart').onclick = () => {
@@ -333,20 +383,14 @@
   };
 
   document.addEventListener('keydown', e => {
+    if (e.keyCode === KEYS.P) { if (running) setPaused(!paused); return; }
     if (!running || paused) return;
     switch (e.keyCode) {
       case KEYS.LEFT:  if (!collide(grid, {...current, x: current.x - 1})) current.x--; break;
       case KEYS.RIGHT: if (!collide(grid, {...current, x: current.x + 1})) current.x++; break;
       case KEYS.DOWN:  tick(); break;
-      case KEYS.UP: {
-        const r = rotate(current.shape);
-        if      (!collide(grid, {...current, shape: r}))              current.shape = r;
-        else if (!collide(grid, {...current, shape: r, x: current.x - 1})) { current.shape = r; current.x--; }
-        else if (!collide(grid, {...current, shape: r, x: current.x + 1})) { current.shape = r; current.x++; }
-        break;
-      }
+      case KEYS.UP: tryRotate(); break;
       case KEYS.SPACE: hardDrop(); break;
-      case KEYS.P: paused = !paused; break;
       case KEYS.C: holdPiece(); break;
     }
     draw();
@@ -365,13 +409,7 @@
       case 'down':
         tick();
         return; // tick ya llama a draw
-      case 'rotate': {
-        const r = rotate(current.shape);
-        if      (!collide(grid, {...current, shape: r}))                        current.shape = r;
-        else if (!collide(grid, {...current, shape: r, x: current.x - 1})) { current.shape = r; current.x--; }
-        else if (!collide(grid, {...current, shape: r, x: current.x + 1})) { current.shape = r; current.x++; }
-        break;
-      }
+      case 'rotate': tryRotate(); break;
       case 'drop':
         hardDrop();
         return;

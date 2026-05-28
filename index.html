@@ -12,23 +12,26 @@
 <div class="game">
 <div class="side">
 <div class="title">TETRIS ARENA<br><small>SUNSET 8BIT</small></div>
-<div class="piece-row">
-  <div class="piece-box">
-    <div class="piece-label">NEXT</div>
-    <canvas id="next" width="80" height="80"></canvas>
+<div id="mobile-track"></div>
+<div class="side-mid">
+  <div class="piece-row">
+    <div class="piece-box">
+      <div class="piece-label">NEXT</div>
+      <canvas id="next" width="80" height="80"></canvas>
+    </div>
+    <div class="piece-box">
+      <div class="piece-label">HOLD <span class="key-hint">[C]</span></div>
+      <canvas id="hold" width="80" height="80"></canvas>
+    </div>
   </div>
-  <div class="piece-box">
-    <div class="piece-label">HOLD <span class="key-hint">[C]</span></div>
-    <canvas id="hold" width="80" height="80"></canvas>
+  <div class="stats">
+  <div>SCORE</div><div id="score">0</div>
+  <div>BEST</div><div id="best">0</div>
+  <div>LINES</div><div id="lines">0</div>
+  <div>LEVEL</div><div id="level">1</div>
+  <div>SPEED</div><div id="speed">-</div>
+  <div>TIME</div><div id="time">00:00</div>
   </div>
-</div>
-<div class="stats">
-<div>SCORE</div><div id="score">0</div>
-<div>BEST</div><div id="best">0</div>
-<div>LINES</div><div id="lines">0</div>
-<div>LEVEL</div><div id="level">1</div>
-<div>SPEED</div><div id="speed">-</div>
-<div>TIME</div><div id="time">00:00</div>
 </div>
 <div class="controls">
 <button id="start">▶ START</button>
@@ -36,7 +39,7 @@
 <button id="reset">🔁 RESET</button>
 </div>
 <div class="controls">
-<button id="nextTrack">🎵 NEXT TRACK</button>
+<button id="nextTrack">🎵 NEXT</button>
 <button id="mute">🔊 MUTE</button>
 </div>
 </div>
@@ -51,7 +54,7 @@
   <div class="mob-row">
     <button class="mob-btn" id="mob-hold"><span class="mob-icon">⇄</span><span class="mob-label">HOLD</span></button>
     <button class="mob-btn" id="mob-drop"><span class="mob-icon">⬇</span><span class="mob-label">DROP</span></button>
-    <button class="mob-btn" id="mob-rotate"><span class="mob-icon">↻</span><span class="mob-label">ROTATE</span></button>
+    <button class="mob-btn" id="mob-rotate"><span class="mob-icon">↻</span><span class="mob-label">ROT</span></button>
   </div>
 </div>
 
@@ -63,6 +66,13 @@
     <div class="go-row"><span>SCORE</span><span id="go-score">0</span></div>
     <div class="go-row"><span>BEST</span><span id="go-best">0</span></div>
     <button id="go-restart">▶ PLAY AGAIN</button>
+  </div>
+</div>
+
+<div id="pause-overlay">
+  <div id="pause-box">
+    <div class="pause-title">PAUSED</div>
+    <button id="pause-resume">▶ RESUME</button>
   </div>
 </div>
 
